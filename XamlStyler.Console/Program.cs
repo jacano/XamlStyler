@@ -99,24 +99,39 @@ namespace Xavalon.XamlStyler.Xmagic
                     this.Log($"\nOriginal Content:\n\n{originalContent}\n", LogLevel.Insanity);
                 }
 
-                var formattedOutput = String.IsNullOrWhiteSpace(configurationPath)
-                    ? stylerService.StyleDocument(originalContent)
-                    : new StylerService(this.LoadConfiguration(configurationPath)).StyleDocument(originalContent);
-
-                this.Log($"\nFormatted Output:\n\n{formattedOutput}\n", LogLevel.Insanity);
-
-                using (var writer = new StreamWriter(path, false, encoding))
+                if (this.options.Verify)
                 {
-                    try
+                    var wasStyled = String.IsNullOrWhiteSpace(configurationPath)
+                       ? stylerService.VerifyDocument(originalContent)
+                       : new StylerService(this.LoadConfiguration(configurationPath)).VerifyDocument(originalContent);
+
+                    if (wasStyled)
                     {
-                        writer.Write(formattedOutput);
-                        this.Log($"Finished Processing: {file}", LogLevel.Verbose);
+                        this.Log($"{file} does not comply with the style");
+                        Environment.Exit(-1);
                     }
-                    catch (Exception e)
+                }
+                else
+                { 
+                    var formattedOutput = String.IsNullOrWhiteSpace(configurationPath)
+                        ? stylerService.StyleDocument(originalContent)
+                        : new StylerService(this.LoadConfiguration(configurationPath)).StyleDocument(originalContent);
+
+                    this.Log($"\nFormatted Output:\n\n{formattedOutput}\n", LogLevel.Insanity);
+
+                    using (var writer = new StreamWriter(path, false, encoding))
                     {
-                        this.Log("Skipping... Error formatting XAML. Increase log level for more details.");
-                        this.Log($"Exception: {e.Message}", LogLevel.Verbose);
-                        this.Log($"StackTrace: {e.StackTrace}", LogLevel.Debug);
+                        try
+                        {
+                            writer.Write(formattedOutput);
+                            this.Log($"Finished Processing: {file}", LogLevel.Verbose);
+                        }
+                        catch (Exception e)
+                        {
+                            this.Log("Skipping... Error formatting XAML. Increase log level for more details.");
+                            this.Log($"Exception: {e.Message}", LogLevel.Verbose);
+                            this.Log($"StackTrace: {e.StackTrace}", LogLevel.Debug);
+                        }
                     }
                 }
 
@@ -219,6 +234,9 @@ namespace Xavalon.XamlStyler.Xmagic
 
             [Option('r', "recursive", DefaultValue = false, HelpText = "Recursively process specified directory.")]
             public bool IsRecursive { get; set; }
+
+            [Option('v', "verify", DefaultValue = false, HelpText = "Verify the document comply with the style.")]
+            public bool Verify { get; set; }
 
             [Option('l', "loglevel", DefaultValue = LogLevel.Default, HelpText = "Levels in order of increasing detail: None, Minimal, Default, Verbose, Debug")]
             public LogLevel LogLevel { get; set; }

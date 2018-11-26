@@ -87,6 +87,15 @@ namespace Xavalon.XamlStyler.Core
             return xamlOutput;
         }
 
+        public bool VerifyDocument(string xamlSource)
+        {
+            var styledDocument = StyleDocument(xamlSource);
+
+            var wasStyled = xamlSource != styledDocument;
+
+            return wasStyled;
+        }
+
         private string Format(string xamlSource)
         {
             StringBuilder output = new StringBuilder();
